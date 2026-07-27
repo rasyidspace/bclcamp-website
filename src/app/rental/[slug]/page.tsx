@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { formatRupiah } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { RentalBookingForm } from "@/components/shared/RentalBookingForm";
 
 export default async function RentalProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -55,43 +54,7 @@ export default async function RentalProductPage({ params }: { params: Promise<{ 
             {product.description}
           </p>
 
-          <div className="bg-muted/30 p-6 border border-border mb-10 space-y-6">
-            <h3 className="font-heading font-medium text-lg">Booking Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start-date">Start Date</Label>
-                <Input type="date" id="start-date" className="bg-background" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="end-date">End Date</Label>
-                <Input type="date" id="end-date" className="bg-background" />
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center py-4 border-t border-b border-border">
-              <span className="font-medium text-muted-foreground">Total Duration</span>
-              <span className="font-medium">3 Days</span>
-            </div>
-            
-            <div className="flex justify-between items-center text-lg font-medium">
-              <span>Estimated Cost</span>
-              <span>{formatRupiah((product.rentalPrice || 0) * 3)}</span>
-            </div>
-            
-            <Link href="/checkout" className="w-full block mt-4">
-              <Button size="lg" className="w-full rounded-none h-14 text-base hover:bg-background hover:text-foreground border border-foreground transition-colors">
-                Book Now
-              </Button>
-            </Link>
-            
-            {product.type === "both" && (
-              <div className="pt-4 text-center">
-                <Link href={`/shop/${product.slug}`} className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground">
-                  Or buy it new for {formatRupiah(product.price)}
-                </Link>
-              </div>
-            )}
-          </div>
+          <RentalBookingForm product={product} />
 
           <Accordion className="w-full" defaultValue={["specifications"]}>
             <AccordionItem value="specifications">
