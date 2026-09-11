@@ -2,13 +2,14 @@ import { createClient } from "@/lib/supabase/server"
 import EditAccessoryForm from "./EditAccessoryForm"
 import { notFound } from "next/navigation"
 
-export default async function EditAccessoryPage({ params }: { params: { id: string } }) {
+export default async function EditAccessoryPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = await createClient()
   
   const { data: accessory } = await supabase
     .from('accessories')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (!accessory) {
