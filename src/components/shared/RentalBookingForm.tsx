@@ -1,39 +1,67 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Product } from "@/lib/mockData";
+import { useState, useMemo, useEffect } from "react";
+// Temporarily using any for Product until fully migrating DB types, but assuming it matches DB
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/utils";
 import Link from "next/link";
+import { checkProductAvailability } from "@/app/actions/rental";
+import { Loader2 } from "lucide-react";
 
 interface RentalBookingFormProps {
-  product: Product;
+  product: any;
 }
 
 export function RentalBookingForm({ product }: RentalBookingFormProps) {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [availability, setAvailability] = useState<number | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
 
   const duration = useMemo(() => {
     if (!startDate || !endDate) return 0;
     const start = new Date(startDate);
     const end = new Date(endDate);
     
-    // Set hours to 0 to avoid timezone issues when selecting dates
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
     
     const differenceInTime = end.getTime() - start.getTime();
     const diffInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
     
-    // Minimum 1 day rental if start and end are the same
-    if (diffInDays === 0) return 1;
     return diffInDays > 0 ? diffInDays : 0;
   }, [startDate, endDate]);
 
+  useEffect(() => {
+    async function checkAvail() {
+      if (startDate && endDate && duration > 0) {
+        setIsChecking(true);
+        try {
+          const avail = await checkProductAvailability(product.id, startDate, endDate);
+          setAvailability(avail);
+        } catch (e) {
+          console.error(e);
+          setAvailability(0);
+        } finally {
+          setIsChecking(false);
+        }
+      } else {
+        setAvailability(null);
+      }
+    }
+    
+    // Simple debounce to prevent excessive calls
+    const timeout = setTimeout(() => {
+      checkAvail();
+    }, 300);
+    
+    return () => clearTimeout(timeout);
+  }, [startDate, endDate, duration, product.id]);
+
   const estimatedCost = duration * (product.rentalPrice || 0);
+  const canBook = duration > 0 && availability !== null && availability > 0;
 
   return (
     <div className="bg-muted/30 p-6 border border-border mb-10 space-y-6">
@@ -48,8 +76,7 @@ export function RentalBookingForm({ product }: RentalBookingFormProps) {
             value={startDate}
             onChange={(e) => {
               setStartDate(e.target.value);
-              // Reset end date if it's before the new start date
-              if (endDate && new Date(e.target.value) > new Date(endDate)) {
+              if (endDate && new Date(e.target.value) >= new Date(endDate)) {
                 setEndDate("");
               }
             }}
@@ -63,7 +90,7 @@ export function RentalBookingForm({ product }: RentalBookingFormProps) {
             className="bg-background"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            min={startDate || undefined}
+            min={startDate ? new Date(new Date(startDate).getTime() + 86400000).toISOString().split('T')[0] : undefined}
           />
         </div>
       </div>
@@ -72,19 +99,28 @@ export function RentalBookingForm({ product }: RentalBookingFormProps) {
         <span className="font-medium text-muted-foreground">Total Duration</span>
         <span className="font-medium">{duration} {duration === 1 ? 'Day' : 'Days'}</span>
       </div>
+
+      {availability !== null && duration > 0 && (
+        <div className="flex justify-between items-center pb-4 border-b border-border">
+          <span className="font-medium text-muted-foreground">Availability</span>
+          <span className={`font-medium ${availability > 0 ? 'text-green-600' : 'text-red-500'}`}>
+            {isChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : availability > 0 ? `${availability} Available` : 'Fully Booked'}
+          </span>
+        </div>
+      )}
       
       <div className="flex justify-between items-center text-lg font-medium">
         <span>Estimated Cost</span>
         <span>{formatRupiah(estimatedCost)}</span>
       </div>
       
-      <Link href="/checkout" className="w-full block mt-4" onClick={(e) => { if(duration <= 0) e.preventDefault(); }}>
+      <Link href="/checkout" className="w-full block mt-4" onClick={(e) => { if(!canBook) e.preventDefault(); }}>
         <Button 
           size="lg" 
-          className="w-full rounded-none h-14 text-base hover:bg-background hover:text-foreground border border-foreground transition-colors"
-          disabled={duration <= 0}
+          className="w-full rounded-none h-14 text-base hover:bg-background hover:text-foreground border border-foreground transition-colors disabled:opacity-50"
+          disabled={!canBook || isChecking}
         >
-          Book Now
+          {isChecking ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : canBook ? 'Book Now' : 'Not Available'}
         </Button>
       </Link>
       

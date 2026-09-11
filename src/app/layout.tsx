@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   description: "Premium outdoor retail and rental company specializing in ultralight backpacking, hiking, and camping equipment.",
 };
 
+import { ConditionalLayout } from "@/components/layout/ConditionalLayout";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,9 +26,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${GeistSans.variable}`}>
       <body className="font-sans antialiased flex min-h-screen flex-col bg-background text-foreground">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <ConditionalLayout navbar={<Navbar />} footer={<Footer />}>
+          {children}
+        </ConditionalLayout>
       </body>
     </html>
   );

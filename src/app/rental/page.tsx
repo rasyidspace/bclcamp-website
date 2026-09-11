@@ -1,15 +1,21 @@
 import { ProductFilters } from "@/components/shared/ProductFilters";
 import { ProductCard } from "@/components/shared/ProductCard";
-import { PRODUCTS } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Rental Gear | Backcountry Light",
   description: "Rent premium ultralight outdoor gear for your next adventure.",
 };
 
-export default function RentalPage() {
-  const rentalProducts = PRODUCTS.filter(p => p.type === "rent" || p.type === "both");
+export default async function RentalPage() {
+  const supabase = await createClient();
+  const { data: rentalProducts } = await supabase
+    .from('products')
+    .select('*')
+    .eq('status', 'active')
+    .in('type', ['rent', 'both'])
+    .order('created_at', { ascending: false });
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-12 md:py-24">
@@ -28,7 +34,7 @@ export default function RentalPage() {
         
         <div className="flex-1">
           <div className="hidden lg:flex items-center justify-between mb-8 pb-4 border-b">
-            <span className="text-sm text-muted-foreground">{rentalProducts.length} Results</span>
+            <span className="text-sm text-muted-foreground">{rentalProducts?.length || 0} Results</span>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Sort by:</span>
               <select className="text-sm border-none bg-transparent outline-none font-medium text-foreground cursor-pointer">
@@ -41,8 +47,18 @@ export default function RentalPage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-12">
-            {rentalProducts.map((product) => (
-              <ProductCard key={product.id} {...product} href={`/rental/${product.slug}`} type="rent" />
+            {rentalProducts?.map((product: any) => (
+              <ProductCard 
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                brand={product.brand}
+                price={product.price}
+                rentalPrice={product.rental_price}
+                image={product.image?.startsWith('http') ? product.image : '/tent/tc-product-diafort.webp'}
+                type="rent"
+                href={`/rental/${product.slug}`} 
+              />
             ))}
           </div>
           

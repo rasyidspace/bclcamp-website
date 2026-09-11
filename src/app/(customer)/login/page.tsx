@@ -2,13 +2,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { login } from "@/app/actions/auth";
 
 export const metadata = {
   title: "Login | Backcountry Light",
   description: "Login to your Backcountry Light account.",
 };
 
-export default function LoginPage() {
+export default async function LoginPage(props: {
+  searchParams: Promise<{ error?: string; message?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  
   return (
     <div className="container mx-auto px-4 flex items-center justify-center min-h-[70vh] py-12">
       <div className="mx-auto w-full max-w-[400px] space-y-8">
@@ -19,11 +24,22 @@ export default function LoginPage() {
           </p>
         </div>
         
-        <div className="space-y-6">
+        {searchParams?.error && (
+          <div className="p-4 bg-destructive/10 text-destructive text-sm font-medium border border-destructive/20 rounded-md">
+            {searchParams.error}
+          </div>
+        )}
+        {searchParams?.message && (
+          <div className="p-4 bg-green-500/10 text-green-600 text-sm font-medium border border-green-500/20 rounded-md">
+            {searchParams.message}
+          </div>
+        )}
+        
+        <form action={login} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="hello@example.com" required className="bg-background" />
+              <Input id="email" name="email" type="email" placeholder="hello@example.com" required className="bg-background" />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -32,14 +48,14 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <Input id="password" type="password" required className="bg-background" />
+              <Input id="password" name="password" type="password" required className="bg-background" />
             </div>
           </div>
           
-          <Button size="lg" className="w-full rounded-none" render={<Link href="/" />}>
+          <Button type="submit" size="lg" className="w-full rounded-none">
             Sign In
           </Button>
-        </div>
+        </form>
         
         <div className="text-center text-sm text-muted-foreground border-t pt-6">
           Don&apos;t have an account?{" "}

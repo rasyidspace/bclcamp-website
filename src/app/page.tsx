@@ -3,9 +3,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { BrandLogo } from "@/components/shared/BrandLogo";
-import { PRODUCTS } from "@/lib/mockData";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const { data: featuredProducts } = await supabase
+    .from('products')
+    .select('*')
+    .eq('status', 'active')
+    .limit(4);
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* 1. Hero */}
@@ -77,15 +84,15 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-12">
-            {PRODUCTS.slice(0, 4).map((product) => (
+            {featuredProducts?.map((product: any) => (
               <ProductCard 
                 key={product.id}
                 id={product.id}
                 name={product.name}
                 brand={product.brand}
                 price={product.price}
-                rentalPrice={product.rentalPrice}
-                image={product.image}
+                rentalPrice={product.rental_price}
+                image={product.image?.startsWith('http') ? product.image : '/tent/tc-product-diafort.webp'}
                 type={product.type}
                 href={`/shop/${product.slug}`}
               />

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { PRODUCTS } from "@/lib/mockData";
 import { ProductGallery } from "@/components/shared/ProductGallery";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
 
 import Link from "next/link";
 import { formatRupiah } from "@/lib/utils";
@@ -9,14 +9,19 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 export default async function ShopProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = PRODUCTS.find((p) => p.slug === slug);
+  const supabase = await createClient();
+  const { data: product } = await supabase
+    .from('products')
+    .select('*')
+    .eq('slug', slug)
+    .single();
 
   if (!product) {
     notFound();
   }
 
-  // Create an array of mock images based on the single image for the gallery
-  const images = [product.image, product.image, product.image, product.image];
+  const imageUrl = product.image?.startsWith('http') ? product.image : '/tent/tc-product-diafort.webp';
+  const images = [imageUrl, imageUrl, imageUrl, imageUrl]; // We can update this when we have multiple images
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl py-12 md:py-24">
@@ -44,7 +49,7 @@ export default async function ShopProductPage({ params }: { params: Promise<{ sl
             {formatRupiah(product.price)}
           </div>
 
-          <p className="text-lg text-muted-foreground mb-8">
+          <p className="text-lg text-muted-foreground mb-8 whitespace-pre-wrap">
             {product.description}
           </p>
 
@@ -55,37 +60,24 @@ export default async function ShopProductPage({ params }: { params: Promise<{ sl
               </Button>
             </Link>
             
-            {(product.type === "rent" || product.type === "both") && product.rentalPrice && (
+            {(product.type === "rent" || product.type === "both") && product.rental_price && (
               <div className="pt-4 border-t text-center">
                 <p className="text-sm text-muted-foreground mb-3">Also available for rent</p>
                 <Link href={`/rental/${product.slug}`} className="w-full block">
                   <Button size="lg" variant="outline" className="w-full rounded-none h-14 text-base">
-                    Rent from {formatRupiah(product.rentalPrice)} / day
+                    Rent from {formatRupiah(product.rental_price)} / day
                   </Button>
                 </Link>
               </div>
             )}
           </div>
 
-          <Accordion className="w-full" defaultValue={["specifications"]}>
-            <AccordionItem value="specifications">
-              <AccordionTrigger className="font-heading text-lg">Specifications</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-2 pt-2">
-                  {product.specifications && Object.entries(product.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between py-2 border-b last:border-0 border-border/50">
-                      <span className="text-muted-foreground">{key}</span>
-                      <span className="font-medium">{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+          <Accordion className="w-full" defaultValue={["shipping"]}>
             <AccordionItem value="shipping">
               <AccordionTrigger className="font-heading text-lg">Shipping & Returns</AccordionTrigger>
               <AccordionContent>
                 <p className="text-muted-foreground pt-2">
-                  Free standard shipping on all orders over $99. We offer a 30-day return policy for unused gear in its original packaging.
+                  Free standard shipping on all orders over Rp 500.000. We offer a 30-day return policy for unused gear in its original packaging.
                 </p>
               </AccordionContent>
             </AccordionItem>

@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { SearchDialog } from "@/components/layout/SearchDialog";
 import { CartSidebar } from "@/components/layout/CartSidebar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { UserNav } from "@/components/layout/UserNav";
+import { Suspense } from "react";
 // HMR trigger
 
-export default function Navbar() {
+export default async function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
@@ -32,11 +34,9 @@ export default function Navbar() {
           <div className="flex items-center gap-0 md:gap-2">
             <SearchDialog />
             <CartSidebar />
-            <Link href="/login">
-              <Button variant="ghost" size="icon" aria-label="Login">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            <Suspense fallback={<Button variant="ghost" size="icon" aria-label="Loading"><User className="h-5 w-5 opacity-50" /></Button>}>
+              <UserNav />
+            </Suspense>
             <Sheet>
               <SheetTrigger render={
                 <Button variant="ghost" size="icon" className="md:hidden" aria-label="Menu" />
